@@ -38,8 +38,8 @@ int main(void) {
     wchar_t board[225];    //used to store every wchar_t of the 15x15 board
     
     /*
-     the 112 1 dimensional arrays represents 112 pieces
-     each 1 dimensional array store a position like a1, h12, or c10
+     the 112 1 dimensional arrays represent 112 pieces
+     each 1 dimensional array store a coordinate like a1, h12, or c10
      */
     char white[112][3], black[112][3];
     init(white, black);
