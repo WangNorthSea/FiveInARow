@@ -35,6 +35,7 @@ int min(int a, int b);
 int main(void) {
     setlocale(LC_ALL,"zh_CN.UTF-8");
     int i;
+    int fMove;             //used to store the kind of the forbidden move black has made
     wchar_t board[225];    //used to store every wchar_t of the 15x15 board
     
     /*
@@ -50,8 +51,8 @@ int main(void) {
         scanf("%s", black[i]);
         refreshBoard(board, white, black);
         if (checkWin(board) == BLACKWIN) { printf("Black Wins!\n"); break; }
-        if (checkForbiddenMoves(board, black[i]) == VIOLATE33) { printf("White Wins! Black has made a 3,3 forbidden move.\n"); break; }
-        if (checkForbiddenMoves(board, black[i]) == VIOLATE44) { printf("White Wins! Black has made a 4,4 forbidden move.\n"); break; }
+        fMove = checkForbiddenMoves(board, black[i]);
+        if (fMove) { printf("White Wins! Black has made a %d,%d forbidden move.\n", fMove, fMove); break; }
         
         printf("Please enter a position(like h7, now you are the white):");
         scanf("%s", white[i]);
