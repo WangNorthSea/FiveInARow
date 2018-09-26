@@ -36,6 +36,7 @@ int checkRepetition(char black[112][3], char white[112][3], char position[3]);
 int min(int a, int b);
 
 int main(void) {
+    /* the "zh_CN.UFT-8" encoding is for macOS/Linux, for Windows, it should be "chs" */
     setlocale(LC_ALL,"zh_CN.UTF-8");
     int i;
     int gameStatus;        //used to store the status of the whole game, anyone wins or not
