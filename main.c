@@ -10,11 +10,13 @@
 #include <stdlib.h>
 #include <locale.h>
 
-#define NOWIN    0
+#define YES 1
+#define NO 0
+#define NOWIN 0
 #define WHITEWIN 1
 #define BLACKWIN 2
 #define NOVIOLATE 0
-#define VIOLATE 1
+#define VIOLATE 5
 #define VIOLATE33 3
 #define VIOLATE44 4
 
@@ -30,12 +32,15 @@ int checkThreeThree(wchar_t * board, char lastPiece[3]);
 int checkFourFour(wchar_t * board, char lastPiece[3]);
 wchar_t * getBoardThings(wchar_t * board, char lastPiece[3], int count, int position, int direction);
 int transformCoordinate(char position[3]);
+int checkRepetition(char black[112][3], char white[112][3], char position[3]);
 int min(int a, int b);
 
 int main(void) {
     setlocale(LC_ALL,"zh_CN.UTF-8");
     int i;
+    int gameStatus;        //used to store the status of the whole game, anyone wins or not
     int fMove;             //used to store the kind of the forbidden move black has made
+    char position[3];      //used to store a newly entered position temporarily
     wchar_t board[225];    //used to store every wchar_t of the 15x15 board
     
     /*
@@ -48,14 +53,26 @@ int main(void) {
     
     for (i = 0; i < 112; i++) {
         printf("Please enter a position(like h7, now you are the black):");
-        scanf("%s", black[i]);
+        scanf("%s", position);
+        while (checkRepetition(black, white, position)) {
+            printf("There has already been a piece, please enter a position again:");
+            scanf("%s", position);
+        }
+        black[i][0] = position[0]; black[i][1] = position[1]; black[i][2] = position[2];
         refreshBoard(board, white, black);
-        if (checkWin(board) == BLACKWIN) { printf("Black Wins!\n"); break; }
+        gameStatus = checkWin(board);
+        if (gameStatus == VIOLATE) { printf("White Wins! Black has made a long connection forbidden move.\n"); break; }
+        else if (gameStatus == BLACKWIN) { printf("Black Wins!\n"); break; }
         fMove = checkForbiddenMoves(board, black[i]);
         if (fMove) { printf("White Wins! Black has made a %d,%d forbidden move.\n", fMove, fMove); break; }
         
         printf("Please enter a position(like h7, now you are the white):");
-        scanf("%s", white[i]);
+        scanf("%s", position);
+        while (checkRepetition(black, white, position)) {
+            printf("There has already been a piece, please enter a position again:");
+            scanf("%s", position);
+        }
+        white[i][0] = position[0]; white[i][1] = position[1]; white[i][2] = position[2];
         refreshBoard(board, white, black);
         if (checkWin(board) == WHITEWIN) { printf("White Wins!\n"); break; }
     }
@@ -153,8 +170,11 @@ void printBoard(wchar_t * board) {
  this function is used to check whether black or white has won the game
  */
 int checkWin(wchar_t * board) {
+    int blackStatus;
     if (checkWhoWins(board, WHITEWIN, L'○')) { return WHITEWIN; }
-    if (checkWhoWins(board, BLACKWIN, L'●')) { return BLACKWIN; }
+    blackStatus = checkWhoWins(board, BLACKWIN, L'●');
+    if (blackStatus == VIOLATE) { return VIOLATE; }
+    else if (blackStatus == BLACKWIN) { return BLACKWIN; }
     return NOWIN;
 }
 
@@ -168,38 +188,62 @@ int checkWhoWins(wchar_t * board, int WHOWINS, wchar_t piece) {
     /* check horizontally */
     for (i = 0; i < 15; i++) {
         for (j = 0; j < 11; j++) {
-            if ((board[i * 15 + j] == piece) && (board[i * 15 + j + 1] == piece) && (board[i * 15 + j + 2] == piece) && (board[i * 15 + j + 3] == piece) && (board[i * 15 + j + 4] == piece)) { return WHOWINS; }
+            if ((board[i * 15 + j] == piece) && (board[i * 15 + j + 1] == piece) && (board[i * 15 + j + 2] == piece) && (board[i * 15 + j + 3] == piece) && (board[i * 15 + j + 4] == piece)) {
+                /* entering the "if" branch below means that black has made a long connection forbidden move */
+                if ((j < 10) && (board[i * 15 + j + 5] == piece) && (piece == L'●')) { return VIOLATE; }
+                return WHOWINS;
+            }
         }
     }
     
     /* check vertically */
     for (j = 0; j < 15; j++) {
         for (i = 0; i < 11; i++) {
-            if ((board[j + i * 15] == piece) && (board[j + (i + 1) * 15] == piece) && (board[j + (i + 2) * 15] == piece) && (board[j + (i + 3) * 15] == piece) && (board[j + (i + 4) * 15] == piece)) { return WHOWINS; }
-        }
-    }
-    
-    /* check from upper left to lower right */
-    for (i = 4; i < 15; i++) {  //the first part, to the diagonal of the chess board
-        for (j = 0; j <= (i - 4); j++) {
-            if ((board[i + j * 14] == piece) && (board[(i + j * 14) + 14] == piece) && (board[(i + j * 14) + 2 * 14] == piece) && (board[(i + j * 14) + 3 * 14] == piece) && (board[(i + j * 14) + 4 * 14] == piece)) { return WHOWINS; }
-        }
-    }
-    for (i = 0; i < 10; i++) {  //the second part, from the diagonal to the lower right
-        for (j = 0; j <= (9 - i); j++) {
-            if ((board[29 + i * 15 + j * 14] == piece) && (board[29 + i * 15 + j * 14 + 14] == piece) && (board[29 + i * 15 + j * 14 + 2 * 14] == piece) && (board[29 + i * 15 + j * 14 + 3 * 14] == piece) && (board[29 + i * 15 + j * 14 + 4 * 14] == piece)) { return WHOWINS; }
+            if ((board[j + i * 15] == piece) && (board[j + (i + 1) * 15] == piece) && (board[j + (i + 2) * 15] == piece) && (board[j + (i + 3) * 15] == piece) && (board[j + (i + 4) * 15] == piece)) {
+                /* entering the "if" branch below means that black has made a long connection forbidden move */
+                if ((i < 10) && (board[j + (i + 5) * 15] == piece) && (piece == L'●')) { return VIOLATE; }
+                return WHOWINS;
+            }
         }
     }
     
     /* check from upper right to lower left */
-    for (i = 0; i < 11; i++) {  //the first part, to the diagonal of the chess board
-        for (j = 0; j <= i; j++) {
-            if ((board[10 - i + j * 16] == piece) && (board[10 - i + j * 16 + 16] == piece) && (board[10 - i + j * 16 + 2 * 16] == piece) && (board[10 - i + j * 16 + 3 * 16] == piece) && (board[10 - i + j * 16 + 4 * 16] == piece)) { return WHOWINS; }
+    for (i = 4; i < 15; i++) {  //the first part, to the diagonal of the chess board
+        for (j = 0; j <= (i - 4); j++) {
+            if ((board[i + j * 14] == piece) && (board[(i + j * 14) + 14] == piece) && (board[(i + j * 14) + 2 * 14] == piece) && (board[(i + j * 14) + 3 * 14] == piece) && (board[(i + j * 14) + 4 * 14] == piece)) {
+                /* entering the "if" branch below means that black has made a long connection forbidden move */
+                if ((i > 4) && (board[(i + j * 14) + 5 * 14] == piece) && (piece == L'●')) { return VIOLATE; }
+                return WHOWINS;
+            }
         }
     }
     for (i = 0; i < 10; i++) {  //the second part, from the diagonal to the lower left
         for (j = 0; j <= (9 - i); j++) {
-            if ((board[15 * (i + 1) + j * 16] == piece) && (board[15 * (i + 1) + j * 16 + 16] == piece) && (board[15 * (i + 1) + j * 16 + 2 * 16] == piece) && (board[15 * (i + 1) + j * 16 + 3 * 16] == piece) && (board[15 * (i + 1) + j * 16 + 4 * 16] == piece)) { return WHOWINS; }
+            if ((board[29 + i * 15 + j * 14] == piece) && (board[29 + i * 15 + j * 14 + 14] == piece) && (board[29 + i * 15 + j * 14 + 2 * 14] == piece) && (board[29 + i * 15 + j * 14 + 3 * 14] == piece) && (board[29 + i * 15 + j * 14 + 4 * 14] == piece)) {
+                /* entering the "if" branch below means that black has made a long connection forbidden move */
+                if ((i < 9) && (board[29 + i * 15 + j * 14 + 5 * 14] == piece) && (piece == L'●')) { return VIOLATE; }
+                return WHOWINS;
+            }
+        }
+    }
+    
+    /* check from upper left to lower right */
+    for (i = 0; i < 11; i++) {  //the first part, to the diagonal of the chess board
+        for (j = 0; j <= i; j++) {
+            if ((board[10 - i + j * 16] == piece) && (board[10 - i + j * 16 + 16] == piece) && (board[10 - i + j * 16 + 2 * 16] == piece) && (board[10 - i + j * 16 + 3 * 16] == piece) && (board[10 - i + j * 16 + 4 * 16] == piece)) {
+                /* entering the "if" branch below means that black has made a long connection forbidden move */
+                if ((i > 0) && (board[10 - i + j * 16 + 5 * 16] == piece) && (piece == L'●')) { return VIOLATE; }
+                return WHOWINS;
+            }
+        }
+    }
+    for (i = 0; i < 10; i++) {  //the second part, from the diagonal to the lower right
+        for (j = 0; j <= (9 - i); j++) {
+            if ((board[15 * (i + 1) + j * 16] == piece) && (board[15 * (i + 1) + j * 16 + 16] == piece) && (board[15 * (i + 1) + j * 16 + 2 * 16] == piece) && (board[15 * (i + 1) + j * 16 + 3 * 16] == piece) && (board[15 * (i + 1) + j * 16 + 4 * 16] == piece)) {
+                /* entering the "if" branch below means that black has made a long connection forbidden move */
+                if ((i < 9) && (board[15 * (i + 1) + j * 16 + 5 * 16] == piece) && (piece == L'●')) { return VIOLATE; }
+                return WHOWINS;
+            }
         }
     }
     
@@ -208,6 +252,8 @@ int checkWhoWins(wchar_t * board, int WHOWINS, wchar_t piece) {
 
 /*
  this function is used to check whether the black has made a forbidden move
+ it can check whether 3,3 forbidden move or 4,4 forbidden move has occurred
+ as for long connection forbidden move, it is checked by the function "checkWhoWins"
  */
 int checkForbiddenMoves(wchar_t * board, char lastPiece[3]) {
     if (checkThreeThree(board, lastPiece)) { return VIOLATE33; }
@@ -479,6 +525,34 @@ int transformCoordinate(char position[3]) {
     else {
         return ((15 - (position[1] - 48)) * 15 + (position[0] - 97));
     }
+}
+
+/*
+ this function is used to check whether there has already been a piece in the position newly entered
+ */
+int checkRepetition(char black[112][3], char white[112][3], char position[3]) {
+    int i, j;
+    int times = 0;
+    
+    for (i = 0; i < 112; i++) {
+        for (j = 0; j < 3; j++) {
+            if (black[i][j] == position[j]) { times++; }
+            else { break; }
+        }
+        if (times == 3) { return YES; }
+        times = 0;
+    }
+    
+    for (i = 0; i < 112; i++) {
+        for (j = 0; j < 3; j++) {
+            if (white[i][j] == position[j]) { times++; }
+            else { break; }
+        }
+        if (times == 3) { return YES; }
+        times = 0;
+    }
+    
+    return NO;
 }
 
 /*
