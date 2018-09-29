@@ -330,12 +330,14 @@ int checkThreeThree(wchar_t * board, char lastPiece[3]) {
  */
 int checkFourFour(wchar_t * board, char lastPiece[3]) {
     int direction;
+    int directionHasRushFour[4] = {-1, -1, -1, -1};
     int count = 0;
     wchar_t * things;
     wchar_t blackPiece = L'●';
     wchar_t whitePiece = L'○';
     
     for (direction = 0; direction <= 3; direction++) {
+        /* check LiveFour */
         things = getBoardThings(board, lastPiece, 6, 1, direction);
         if ((things[0] != blackPiece) && (things[0] != whitePiece) && (things[5] != blackPiece) && (things[5] != whitePiece) && (things[1] == blackPiece) && (things[2] == blackPiece) && (things[3] == blackPiece) && (things[4] == blackPiece)) {
             count += 1;
@@ -357,35 +359,42 @@ int checkFourFour(wchar_t * board, char lastPiece[3]) {
         things = getBoardThings(board, lastPiece, 6, 3, direction);
         if ((things[0] != blackPiece) && (things[0] != whitePiece) && (things[5] != blackPiece) && (things[5] != whitePiece) && (things[1] == blackPiece) && (things[2] == blackPiece) && (things[3] == blackPiece) && (things[4] == blackPiece)) {
             count += 1;
+            continue;
         }
-    }
-    
-    for (direction = 0; direction <= 3; direction++) {
+        
+        /* check RushFour */
         things = getBoardThings(board, lastPiece, 6, 1, direction);
         if ((things[1] == blackPiece) && (things[2] == blackPiece) && (things[3] == blackPiece) && (things[4] == blackPiece) && ((((things[0] == whitePiece) && ((things[5] != blackPiece) && (things[5] != whitePiece))) || ((things[5] == whitePiece) && ((things[0] != blackPiece) && (things[0] != whitePiece)))))) {
             count += 1;
+            directionHasRushFour[direction] = direction;
             continue;
         }
         
         things = getBoardThings(board, lastPiece, 6, 4, direction);
         if ((things[1] == blackPiece) && (things[2] == blackPiece) && (things[3] == blackPiece) && (things[4] == blackPiece) && ((((things[0] == whitePiece) && ((things[5] != blackPiece) && (things[5] != whitePiece))) || ((things[5] == whitePiece) && ((things[0] != blackPiece) && (things[0] != whitePiece)))))) {
             count += 1;
+            directionHasRushFour[direction] = direction;
             continue;
         }
         
         things = getBoardThings(board, lastPiece, 6, 2, direction);
         if ((things[1] == blackPiece) && (things[2] == blackPiece) && (things[3] == blackPiece) && (things[4] == blackPiece) && ((((things[0] == whitePiece) && ((things[5] != blackPiece) && (things[5] != whitePiece))) || ((things[5] == whitePiece) && ((things[0] != blackPiece) && (things[0] != whitePiece)))))) {
             count += 1;
+            directionHasRushFour[direction] = direction;
             continue;
         }
         
         things = getBoardThings(board, lastPiece, 6, 3, direction);
         if ((things[1] == blackPiece) && (things[2] == blackPiece) && (things[3] == blackPiece) && (things[4] == blackPiece) && ((((things[0] == whitePiece) && ((things[5] != blackPiece) && (things[5] != whitePiece))) || ((things[5] == whitePiece) && ((things[0] != blackPiece) && (things[0] != whitePiece)))))) {
             count += 1;
+            directionHasRushFour[direction] = direction;
+            continue;
         }
     }
     
     for (direction = 0; direction <= 3; direction++) {
+        if (directionHasRushFour[direction] == direction) { continue; }
+        /* check EmbeddedFive */
         things = getBoardThings(board, lastPiece, 5, 0, direction);
         if ((things[0] == blackPiece) && (things[4] == blackPiece) && ((((things[1] != blackPiece) && (things[1] != whitePiece)) && (things[2] == blackPiece) && (things[3] == blackPiece)) || (((things[2] != blackPiece) && (things[2] != whitePiece)) && (things[1] == blackPiece) && (things[3] == blackPiece)) || (((things[3] != blackPiece) && (things[3] != whitePiece)) && (things[1] == blackPiece) && (things[2] == blackPiece)))) {
             count += 1;
